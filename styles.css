@@ -1,0 +1,433 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+*:focus {
+  outline: none !important;
+  border-color: initial !important;
+  box-shadow: none !important;
+} 
+
+body {
+  color: white;
+  background-color: #1a1a1a;
+  font-family: 'Roboto', sans-serif;
+}
+
+.navbar-brand {
+  text-shadow: 0 0 2px #ffffff7e, 0 0 4px #ffffff7e, 0 0 6px #ffffff7e; /* Efeito de sombra neon */
+}
+
+.navbar {
+  background-color: #252525 !important;
+}
+
+.dropdown-menu {
+  background-color: #333 !important;
+}
+
+.dropdown-item {
+  color: white;
+}
+
+.form-control {
+  background-color: #333;
+  border-color: #222;
+}
+
+.form-control:focus {
+  background-color: #222;
+  color: white;
+}
+
+.container-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: start;
+  margin: 5px;
+}
+
+.video-title-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+}
+
+.video-container {
+  position: relative;
+  max-width: 800px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-inline: auto;
+  background-color: black;
+}
+
+.video-container.theater,
+.video-container.full-screen {
+  max-width: initial;
+  width: 100%;
+}
+
+.video-container.full-screen {
+  max-height: 100vh;
+}
+
+.btn {
+  font-weight: bold;
+  background-color: #ff8533;
+  color: white;
+}
+
+.btn:hover {
+  background-color: #e68d52;
+  color: white;
+}
+
+video {
+  max-width: 100%;
+  width: 100%;
+  outline: none;
+}
+
+.video-container {
+  position: relative;
+  max-width: 800px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-inline: auto;
+  background-color: black;
+}
+
+.video-container.theater,
+.video-container.full-screen {
+  max-width: initial;
+  width: 100%;
+}
+
+.video-container.full-screen {
+  max-height: 100vh;
+}
+
+video {
+  max-width: 100%;
+  width: 100%;
+  outline: none;
+}
+
+.video-controls-container {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  color: white;
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 150ms ease-in-out;
+}
+
+.video-controls-container::before {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, .75), transparent);
+  width: 100%;
+  aspect-ratio: 6 / 1;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.video-container:hover .video-controls-container,
+.video-container:focus-within .video-controls-container,
+.video-container.paused .video-controls-container {
+  opacity: 1;
+}
+
+.video-controls-container .controls {
+  display: flex;
+  gap: .5rem;
+  padding: .25rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.video-controls-container .controls button {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+  height: 30px;
+  width: 30px;
+  font-size: 1.1rem;
+  cursor: pointer;
+  opacity: .85;
+  transition: opacity 150ms ease-in-out;
+}
+
+.video-controls-container .controls button:hover {
+  color: #ff8533;
+  opacity: 1;
+}
+  
+#random-button.active-random {
+  color: #ff8533;
+}
+
+#loop-button.active-loop {
+  color: #ff8533;
+}
+
+.video-container.paused .pause-icon {
+  display: none;
+}
+
+.video-container:not(.paused) .play-icon {
+  display: none;
+}
+
+.video-container.theater .tall {
+  display: none;
+}
+
+.video-container.full-screen .open {
+  display: none;
+}
+
+.video-container:not(.full-screen) .close {
+  display: none;
+}
+
+.volume-high-icon,
+.volume-low-icon,
+.volume-muted-icon {
+  display: none;
+}
+
+.video-container[data-volume-level="high"] .volume-high-icon {
+  display: block;
+}
+
+.video-container[data-volume-level="low"] .volume-low-icon {
+  display: block;
+}
+
+.video-container[data-volume-level="muted"] .volume-muted-icon {
+  display: block;
+}
+
+.volume-container {
+  display: flex;
+  align-items: center;
+}
+
+.volume-slider {
+  width: 0;
+  background-color: #ff8533;
+  transform-origin: left;
+  -webkit-appearance: none;
+  border-radius: 10px;
+  height: 5px;
+  transform: scaleX(0);
+  transition: width 150ms ease-in-out, transform 150ms ease-in-out;
+}
+
+.volume-container:hover .volume-slider,
+.volume-slider:focus-within {
+  width: 100px;
+  transform: scaleX(1);
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  background-color: #ff8533;
+  border: 2px solid white;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  z-index: 2; /* Certifica-se de que o polegar esteja acima da faixa cinza */
+}
+
+.volume-slider::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: var(--progress-position);
+  height: 2px; /* Ajuste a altura conforme necessário */
+  background-color: #ccc;
+  transform: translateY(-50%);
+  z-index: 1; /* Coloca a faixa cinza abaixo do polegar */
+}
+.duration-container {
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+  flex-grow: 1;
+}
+
+.timeline-container {
+  height: 7px;
+  margin-inline: .5rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.timeline {
+  background-color: rgba(100, 100, 100, .5);
+  height: 3px;
+  width: 100%;
+  position: relative
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: calc(100% - var(--preview-position) * 100%);
+  background-color: rgb(150, 150, 150);
+  display: none;
+}
+
+.timeline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: calc(100% - var(--progress-position) * 100%);
+  background-color: #ff8533;
+}
+
+.timeline .thumb-indicator {
+  --scale: 0;
+  position: absolute;
+  transform: translateX(-50%) scale(var(--scale));
+  height: 200%;
+  top: -50%;
+  left: calc(var(--progress-position) * 100%);
+  background-color: #ff8533;
+  border-radius: 50%;
+  transition: transform 150ms ease-in-out;
+  aspect-ratio: 1 / 1;
+}
+
+
+.video-container.scrubbing .timeline::before,
+.timeline-container:hover .timeline::before {
+  display: block;
+}
+
+.video-container.scrubbing .thumb-indicator,
+.timeline-container:hover .thumb-indicator {
+  --scale: 1;
+}
+
+.video-container.scrubbing .timeline,
+.timeline-container:hover .timeline {
+  height: 100%;
+}
+
+/* Existing CSS code */
+.video-list {
+  display: flex;
+  flex-wrap: wrap;
+  /* Allow videos to wrap to the next line */
+  justify-content: space-around;
+  margin: 10px;
+}
+
+.video-card {
+  cursor: pointer;
+  text-align: center;
+  padding: 10px;
+  background-color: #333;
+  border-radius: 8px;
+  margin: 5px;
+  width: calc(25% - 10px);
+  /* Set width to 25% to display 4 videos in a row with margin */
+  @media screen and (max-width: 768px) {
+    height: 150px; /* Ajuste a altura conforme necessário */
+  }
+}
+
+.video-card:hover {
+  background-color: #555;
+}
+
+.video-title {
+  color: white;
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.video-frame {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+
+  @media screen and (max-width: 768px) {
+    height: 80%; /* A imagem ocupa 100% da altura do video-card */
+  }
+}
+
+.pagination-container {
+  display: flex;
+  padding: 10px;
+  gap: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.pagination-container .principal {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.pagination-container .principal div {
+  padding: 15px;
+  border-radius: 8px;
+  background-color: #333;
+}
+
+#navigation-buttons {
+  margin-top: 20px;
+  /* Ajuste a margem conforme necessário */
+}
+
+#next-button-pages,
+#prev-button-pages,
+#first-page-button,
+#last-page-button {
+  margin: 0 10px;
+  padding: 10px;
+  /* Ajuste a margem conforme necessário */
+}
+
+/* On screens with a max-width of 600px, set the width to 50% (2 videos per row) */
+@media (max-width: 600px) {
+  .video-card {
+    width: calc(50% - 10px);
+  }
+
+  #next-button-pages,
+  #prev-button-pages,
+  #first-page-button,
+  #last-page-button {
+    margin: 0 15px;
+    padding: 15px;
+  }
+}
