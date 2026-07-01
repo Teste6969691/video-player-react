@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './app.css';
 
-const VIDEOS_DATA_URL = 'https://huggingface.co/api/resolve-cache/datasets/Testefirst44/videos-bunker/5dee3ba036b08a40379f3e278cae30014422ad9e/data.json?%2Fdatasets%2FTestefirst44%2Fvideos-bunker%2Fresolve%2Fvideos%2Fdata.json=&etag=%22841168098a369444226177842498f8e7c40fb9a6%22';
+const VIDEOS_DATA_URL = 'https://huggingface.co/datasets/Testefirst44/videos-bunker/raw/videos/data_test.json';
 const VIDEOS_PER_PAGE = 8;
 
 function formatDuration(time) {
