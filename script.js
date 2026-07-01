@@ -362,6 +362,42 @@ video.addEventListener("volumechange", () => {
     videoContainer.dataset.volumeLevel = volumeLevel
 })
 
+// Função para ocultar controles com delay
+function scheduleHideControls() {
+    if (video.paused) return; // Não oculta se o vídeo está pausado
+    
+    clearTimeout(hideControlsTimeout);
+    hideControlsTimeout = setTimeout(() => {
+        controlsContainer.style.opacity = 0;
+        document.body.style.cursor = 'none';
+    }, 2000);
+}
+
+// Função para mostrar controles
+function showControls() {
+    controlsContainer.style.opacity = 1;
+    document.body.style.cursor = 'auto';
+    scheduleHideControls();
+}
+
+// Event listeners para o videoContainer
+videoContainer.addEventListener('mouseenter', () => {
+    isMouseOver = true;
+    showControls();
+});
+
+videoContainer.addEventListener('mouseleave', () => {
+    isMouseOver = false;
+    if (!video.paused) {
+        controlsContainer.style.opacity = 0;
+        document.body.style.cursor = 'none';
+    }
+});
+
+videoContainer.addEventListener('mousemove', () => {
+    showControls();
+});
+
 // Modos de visualização
 fullScreenBtn.addEventListener("click", toggleFullScreenMode)
 
@@ -369,12 +405,7 @@ function toggleFullScreenMode() {
     if (document.fullscreenElement == null) {
         videoContainer.requestFullscreen();
         controlsContainer.classList.add('fullscreen');
-        hideControlsTimeout = setTimeout(() => {
-            if (!video.paused) {
-                controlsContainer.style.opacity = 0;
-                document.body.style.cursor = 'none';
-            }
-        }, 2000);
+        showControls();
     } else {
         document.exitFullscreen();
         controlsContainer.classList.remove('fullscreen');
@@ -398,12 +429,7 @@ function togglePlay() {
 
 video.addEventListener("play", () => {
     videoContainer.classList.remove("paused")
-    hideControlsTimeout = setTimeout(() => {
-        if (!isMouseOver) {
-            controlsContainer.style.opacity = 0;
-            document.body.style.cursor = 'none';
-        }
-    }, 2000);
+    scheduleHideControls();
 })
 
 video.addEventListener("pause", () => {
@@ -412,17 +438,3 @@ video.addEventListener("pause", () => {
     controlsContainer.style.opacity = 1;
     document.body.style.cursor = 'auto';
 })
-
-video.addEventListener('mousemove', () => {
-    if (video.play) {
-        controlsContainer.style.opacity = 1;
-        document.body.style.cursor = 'auto';
-        clearTimeout(hideControlsTimeout);
-        hideControlsTimeout = setTimeout(() => {
-            if (!video.paused) {
-                controlsContainer.style.opacity = 0;
-                document.body.style.cursor = 'none';
-            }
-        }, 2000);
-    }
-});

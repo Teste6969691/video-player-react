@@ -315,18 +315,18 @@ export default function App() {
     }
   };
 
-  const resetControlsReappear = () => {
+  const scheduleHideControls = () => {
+    if (videoRef.current?.paused) return;
+
     if (controlsReappearTimeoutRef.current) {
       window.clearTimeout(controlsReappearTimeoutRef.current);
     }
 
     showControls();
 
-    if (!videoRef.current?.paused) {
-      controlsReappearTimeoutRef.current = window.setTimeout(() => {
-        showControls();
-      }, 2500);
-    }
+    controlsReappearTimeoutRef.current = window.setTimeout(() => {
+      hideControls();
+    }, 2000);
   };
 
   const toggleFullscreen = () => {
@@ -512,15 +512,15 @@ export default function App() {
           <div
             className={`video-container ${isPlaying ? '' : 'paused'}`}
             data-volume-level={volumeLevel}
-            onMouseMove={resetControlsReappear}
-            onMouseEnter={resetControlsReappear}
+            onMouseMove={scheduleHideControls}
+            onMouseEnter={scheduleHideControls}
             onMouseLeave={() => {
               if (controlsReappearTimeoutRef.current) {
                 window.clearTimeout(controlsReappearTimeoutRef.current);
               }
               hideControls();
             }}
-            onTouchStart={resetControlsReappear}
+            onTouchStart={scheduleHideControls}
           >
             <div className="video-controls-container" ref={controlsRef}>
               <div className="timeline-container" ref={timelineRef} onMouseMove={handleTimelineMouseMove} onMouseDown={handleTimelineMouseDown} onMouseUp={handleTimelineMouseUp}>

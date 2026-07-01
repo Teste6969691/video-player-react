@@ -124,8 +124,13 @@ video {
   right: 0;
   color: white;
   z-index: 100;
-  opacity: 0;
-  transition: opacity 150ms ease-in-out;
+  opacity: 1;
+  transition: opacity 300ms ease-in-out;
+  pointer-events: none;
+}
+
+.video-controls-container.controls {
+  pointer-events: auto;
 }
 
 .video-controls-container::before {
@@ -139,10 +144,8 @@ video {
   pointer-events: none;
 }
 
-.video-container:hover .video-controls-container,
-.video-container:focus-within .video-controls-container,
 .video-container.paused .video-controls-container {
-  opacity: 1;
+  opacity: 1 !important;
 }
 
 .video-controls-container .controls {
@@ -152,6 +155,7 @@ video {
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
+  pointer-events: auto;
 }
 
 .video-controls-container .controls button {
