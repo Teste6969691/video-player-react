@@ -32,6 +32,7 @@ export default function App() {
   const timelineRef = useRef(null);
   const controlsRef = useRef(null);
   const hideControlsTimeoutRef = useRef(null);
+  const controlsReappearTimeoutRef = useRef(null);
   const currentVideoRef = useRef(null);
 
   const [videos, setVideos] = useState([]);
@@ -161,6 +162,11 @@ export default function App() {
       setCurrentTime(0);
       setDuration(0);
       setProgressPosition(0);
+      if (options.autoplay) {
+        window.setTimeout(() => {
+          videoRef.current?.play().catch(() => undefined);
+        }, 120);
+      }
     }
   };
 
@@ -201,7 +207,7 @@ export default function App() {
         const currentIndex = filteredVideos.findIndex((videoItem) => videoItem.nome === currentVideo?.nome);
         const nextVideo = filteredVideos[(currentIndex + 1) % filteredVideos.length] || filteredVideos[0];
         if (nextVideo) {
-          loadVideo(nextVideo);
+          loadVideo(nextVideo, { autoplay: true });
         }
       }
     };
@@ -297,20 +303,42 @@ export default function App() {
     video.currentTime = Math.min(Math.max(0, video.currentTime + amount), video.duration || 0);
   };
 
+  const showControls = () => {
+    if (controlsRef.current) {
+      controlsRef.current.style.opacity = '1';
+    }
+  };
+
+  const hideControls = () => {
+    if (controlsRef.current && !videoRef.current?.paused) {
+      controlsRef.current.style.opacity = '0';
+    }
+  };
+
+  const resetControlsReappear = () => {
+    if (controlsReappearTimeoutRef.current) {
+      window.clearTimeout(controlsReappearTimeoutRef.current);
+    }
+
+    showControls();
+
+    if (!videoRef.current?.paused) {
+      controlsReappearTimeoutRef.current = window.setTimeout(() => {
+        showControls();
+      }, 2500);
+    }
+  };
+
   const toggleFullscreen = () => {
     const videoContainer = controlsRef.current?.closest('.video-container');
     if (!videoContainer) return;
     if (!document.fullscreenElement) {
       videoContainer.requestFullscreen();
       if (hideControlsTimeoutRef.current) clearTimeout(hideControlsTimeoutRef.current);
-      hideControlsTimeoutRef.current = window.setTimeout(() => {
-        if (!videoRef.current?.paused) {
-          controlsRef.current.style.opacity = '0';
-        }
-      }, 2000);
+      showControls();
     } else {
       document.exitFullscreen();
-      controlsRef.current.style.opacity = '1';
+      showControls();
       if (hideControlsTimeoutRef.current) clearTimeout(hideControlsTimeoutRef.current);
     }
   };
@@ -359,6 +387,15 @@ export default function App() {
     document.addEventListener('mouseup', handleTimelineMouseUp);
     return () => document.removeEventListener('mouseup', handleTimelineMouseUp);
   }, [isScrubbing]);
+
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      showControls();
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   const handleVolumeChange = (event) => {
     const nextValue = Number(event.target.value);
@@ -425,7 +462,7 @@ export default function App() {
     const currentIndex = filteredVideos.findIndex((videoItem) => videoItem.nome === currentVideo.nome);
     const nextVideo = filteredVideos[(currentIndex + 1) % filteredVideos.length] || filteredVideos[0];
     if (nextVideo) {
-      loadVideo(nextVideo);
+      loadVideo(nextVideo, { autoplay: true }, { autoplay: true });
     }
   };
 
@@ -467,16 +504,24 @@ export default function App() {
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg navbar-dark">
-        <a className="navbar-brand" href="#">NHere</a>
-      </nav>
-
-      <div className="container-main mt-5">
+       <div className="container-main mt-1">
         <div>
           <div className="video-title-container">
             <h2 className="video-title">{videoTitle}</h2>
           </div>
-          <div className={`video-container ${isPlaying ? '' : 'paused'}`} data-volume-level={volumeLevel}>
+          <div
+            className={`video-container ${isPlaying ? '' : 'paused'}`}
+            data-volume-level={volumeLevel}
+            onMouseMove={resetControlsReappear}
+            onMouseEnter={resetControlsReappear}
+            onMouseLeave={() => {
+              if (controlsReappearTimeoutRef.current) {
+                window.clearTimeout(controlsReappearTimeoutRef.current);
+              }
+              hideControls();
+            }}
+            onTouchStart={resetControlsReappear}
+          >
             <div className="video-controls-container" ref={controlsRef}>
               <div className="timeline-container" ref={timelineRef} onMouseMove={handleTimelineMouseMove} onMouseDown={handleTimelineMouseDown} onMouseUp={handleTimelineMouseUp}>
                 <div className="timeline" style={{ '--progress-position': progressPosition }}>
@@ -518,7 +563,14 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <video id="video-player" ref={videoRef} onClick={togglePlay} playsInline />
+            <video
+              id="video-player"
+              ref={videoRef}
+              onClick={togglePlay}
+              playsInline
+              preload="metadata"
+              crossOrigin="anonymous"
+            />
           </div>
         </div>
 

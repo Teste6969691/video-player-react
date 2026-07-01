@@ -17,6 +17,10 @@ describe('App', () => {
     }));
   });
 
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('renders the player controls and filters videos by category', async () => {
     render(<App />);
 
@@ -42,6 +46,19 @@ describe('App', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/video-09/i)).toBeInTheDocument();
+    });
+  });
+
+  it('starts the next video automatically when advancing', async () => {
+    const playSpy = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
+    render(<App />);
+
+    await screen.findByText(/video-01/i);
+    const nextButton = document.getElementById('next-button');
+    fireEvent.click(nextButton);
+
+    await waitFor(() => {
+      expect(playSpy).toHaveBeenCalled();
     });
   });
 });
