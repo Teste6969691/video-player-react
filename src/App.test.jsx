@@ -2,20 +2,12 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from './App';
 
-const videosFixture = [
-  {
-    nome: '4632554.mov720',
-    categoria: '2d',
-    url_video: 'https://example.com/video-1.mp4',
-    url_thumbnail: 'https://example.com/thumb-1.webp',
-  },
-  {
-    nome: '4632555.mov720',
-    categoria: '3d',
-    url_video: 'https://example.com/video-2.mp4',
-    url_thumbnail: 'https://example.com/thumb-2.webp',
-  },
-];
+const videosFixture = Array.from({ length: 9 }, (_, index) => ({
+  nome: `video-${String(index + 1).padStart(2, '0')}`,
+  categoria: index % 2 === 0 ? '2d' : '3d',
+  url_video: `https://example.com/video-${index + 1}.mp4`,
+  url_thumbnail: `https://example.com/thumb-${index + 1}.webp`,
+}));
 
 describe('App', () => {
   beforeEach(() => {
@@ -28,16 +20,28 @@ describe('App', () => {
   it('renders the player controls and filters videos by category', async () => {
     render(<App />);
 
-    expect((await screen.findAllByText(/4632554\.mov720/i)).length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: /search/i })).toBeInTheDocument();
+    expect((await screen.findAllByText(/video-01/i)).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /primeira/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /última/i })).toBeInTheDocument();
 
-    const categorySelect = screen.getByLabelText(/categorias/i);
-    fireEvent.change(categorySelect, { target: { value: '3d' } });
+    const categoryButton = screen.getByRole('button', { name: /2d/i });
+    fireEvent.click(categoryButton);
 
     await waitFor(() => {
-      expect(screen.queryByText(/4632554\.mov720/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/video-01/i)).not.toBeInTheDocument();
+    });
+  });
+
+  it('paginates the gallery with up to 8 items per page', async () => {
+    render(<App />);
+
+    expect(await screen.findByText(/video-01/i)).toBeInTheDocument();
+    expect(screen.queryByText(/video-09/i)).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /próxima página/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/video-09/i)).toBeInTheDocument();
     });
   });
 });

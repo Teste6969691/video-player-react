@@ -37,7 +37,6 @@ export default function App() {
   const [videos, setVideos] = useState([]);
   const [currentVideo, setCurrentVideo] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
   const [videoTitle, setVideoTitle] = useState('Carregando vídeo...');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
@@ -74,10 +73,8 @@ export default function App() {
         if (!isMounted) return;
         const normalizedVideos = Array.isArray(data) ? data : [];
         setVideos(normalizedVideos);
-        if (normalizedVideos[0]) {
-          setCurrentVideo(normalizedVideos[0]);
-          setVideoTitle(normalizedVideos[0].nome || 'Vídeo');
-        }
+        setCurrentVideo(null);
+        setVideoTitle(normalizedVideos[0] ? 'Carregando vídeo...' : 'Nenhum vídeo disponível');
       })
       .catch(() => {
         if (isMounted) {
@@ -103,13 +100,17 @@ export default function App() {
     return videos.filter((video) => selectedCategories.includes(video.categoria));
   }, [videos, selectedCategories]);
 
-  const galleryVideos = useMemo(() => filteredVideos, [filteredVideos]);
-
-  const totalPages = Math.max(1, Math.ceil(galleryVideos.length / VIDEOS_PER_PAGE));
+  const galleryItems = useMemo(() => filteredVideos, [filteredVideos]);
+  const totalPages = Math.max(1, Math.ceil(galleryItems.length / VIDEOS_PER_PAGE));
+  const shouldShowPagination = totalPages > 1;
 
   useEffect(() => {
     setCurrentPage((prevPage) => Math.min(prevPage, totalPages));
   }, [totalPages]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategories.join('|')]);
 
   useEffect(() => {
     if (!videos.length) return;
@@ -129,14 +130,15 @@ export default function App() {
     }
 
     if (!currentVideo || !filteredVideos.some((video) => video.nome === currentVideo.nome)) {
-      loadVideo(filteredVideos[0], { pushToHistory: false });
+      const randomVideo = filteredVideos[Math.floor(Math.random() * filteredVideos.length)];
+      loadVideo(randomVideo, { pushToHistory: false });
     }
   }, [allCategories, categoriesInitialized, currentVideo?.nome, filteredVideos, videos.length]);
 
   const visibleVideos = useMemo(() => {
     const startIndex = (currentPage - 1) * VIDEOS_PER_PAGE;
-    return galleryVideos.slice(startIndex, startIndex + VIDEOS_PER_PAGE);
-  }, [galleryVideos, currentPage]);
+    return galleryItems.slice(startIndex, startIndex + VIDEOS_PER_PAGE);
+  }, [galleryItems, currentPage]);
 
   const loadVideo = (video, options = {}) => {
     if (!video) return;
@@ -304,13 +306,11 @@ export default function App() {
       hideControlsTimeoutRef.current = window.setTimeout(() => {
         if (!videoRef.current?.paused) {
           controlsRef.current.style.opacity = '0';
-          document.body.style.cursor = 'none';
         }
       }, 2000);
     } else {
       document.exitFullscreen();
       controlsRef.current.style.opacity = '1';
-      document.body.style.cursor = 'auto';
       if (hideControlsTimeoutRef.current) clearTimeout(hideControlsTimeoutRef.current);
     }
   };
@@ -429,17 +429,6 @@ export default function App() {
     }
   };
 
-  const handleSearch = () => {
-    const match = videos.find((video) => video.nome.toLowerCase().includes(searchTerm.toLowerCase()));
-    if (match) {
-      loadVideo(match);
-      setSearchTerm('');
-      setCurrentPage(1);
-    } else {
-      window.alert('Vídeo não encontrado. Tente outro termo de pesquisa.');
-    }
-  };
-
   const toggleLoop = () => {
     const video = videoRef.current;
     if (!video) return;
@@ -459,9 +448,17 @@ export default function App() {
     }
   };
 
-  const handleCategoryChange = (event) => {
-    const nextValues = Array.from(event.target.selectedOptions, (option) => option.value);
-    setSelectedCategories(nextValues);
+  const toggleCategory = (category) => {
+    setSelectedCategories((prevCategories) => {
+      if (prevCategories.includes(category)) {
+        return prevCategories.filter((item) => item !== category);
+      }
+      return [...prevCategories, category];
+    });
+  };
+
+  const selectAllCategories = () => {
+    setSelectedCategories(allCategories);
   };
 
   const handlePageChange = (page) => {
@@ -470,27 +467,8 @@ export default function App() {
 
   return (
     <>
-      <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+      <nav className="navbar navbar-expand-lg navbar-dark">
         <a className="navbar-brand" href="#">NHere</a>
-        <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span className="navbar-toggler-icon" />
-        </button>
-        <div className="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul className="navbar-nav mr-auto">
-            <li className="nav-item dropdown">
-              <a className="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                Sites
-              </a>
-              <div className="dropdown-menu" aria-labelledby="navbarDropdown">
-                <a className="dropdown-item" href="#">Test</a>
-              </div>
-            </li>
-          </ul>
-          <form className="form-inline my-2 my-lg-0" onSubmit={(event) => { event.preventDefault(); handleSearch(); }}>
-            <input id="search-input" className="form-control mr-sm-2" type="search" placeholder="Search" aria-label="Search" value={searchTerm} onChange={(event) => setSearchTerm(event.target.value)} />
-            <button id="search-button" className="btn my-2 my-sm-0" type="button" onClick={handleSearch}>Search</button>
-          </form>
-        </div>
       </nav>
 
       <div className="container-main mt-5">
@@ -544,15 +522,20 @@ export default function App() {
           </div>
         </div>
 
-        <div className="mt-4">
-          <label className="mb-2 d-block" htmlFor="category-filter">Categorias</label>
-          <select id="category-filter" className="form-select" multiple value={selectedCategories} onChange={handleCategoryChange} size={Math.min(Math.max(allCategories.length, 1), 5)}>
+        <div className="category-filter-panel mt-4">
+          <div className="category-filter-header">
+            <span className="category-filter-title">Categorias</span>
+            <button type="button" className="category-toggle-all" onClick={selectAllCategories}>
+              Todas
+            </button>
+          </div>
+          <div className="category-pill-group">
             {allCategories.map((category) => (
-              <option key={category} value={category}>
+              <button key={category} type="button" className={`category-pill ${selectedCategories.includes(category) ? 'active' : ''}`} onClick={() => toggleCategory(category)}>
                 {category}
-              </option>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
 
         <div id="video-list" className="video-list mt-5">
@@ -564,21 +547,23 @@ export default function App() {
           ))}
         </div>
 
-        <div className="pagination-container mt-2">
-          <div className="principal">
-            <button id="prev-button-pages" className="btn me-2" type="button" onClick={() => handlePageChange(Math.max(1, currentPage - 1))}>
-              <i className="fa-solid fa-backward" />
-            </button>
-            <div id="page-info">{currentPage} de {totalPages}</div>
-            <button id="next-button-pages" className="btn me-2" type="button" onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}>
-              <i className="fa-solid fa-forward" />
-            </button>
+        {shouldShowPagination && (
+          <div className="pagination-container mt-2">
+            <div className="principal">
+              <button id="prev-button-pages" className="btn me-2" type="button" aria-label="Página anterior" onClick={() => handlePageChange(Math.max(1, currentPage - 1))}>
+                <i className="fa-solid fa-backward" />
+              </button>
+              <div id="page-info">{currentPage} de {totalPages}</div>
+              <button id="next-button-pages" className="btn me-2" type="button" aria-label="Próxima página" onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}>
+                <i className="fa-solid fa-forward" />
+              </button>
+            </div>
+            <div>
+              <button id="first-page-button" className="btn me-2" type="button" onClick={() => handlePageChange(1)}>Primeira</button>
+              <button id="last-page-button" className="btn" type="button" onClick={() => handlePageChange(totalPages)}>Última</button>
+            </div>
           </div>
-          <div>
-            <button id="first-page-button" className="btn me-2" type="button" onClick={() => handlePageChange(1)}>Primeira</button>
-            <button id="last-page-button" className="btn" type="button" onClick={() => handlePageChange(totalPages)}>Última</button>
-          </div>
-        </div>
+        )}
       </div>
     </>
   );
