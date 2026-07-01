@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './app.css';
 
-const VIDEOS_DATA_URL = 'https://huggingface.co/datasets/Testefirst44/videos-bunker/raw/videos/data_test.json';
+const VIDEOS_DATA_URL = 'https://huggingface.co/datasets/Testefirst44/videos-bunker/raw/videos/data.json';
 const VIDEOS_PER_PAGE = 8;
 
 function formatDuration(time) {
