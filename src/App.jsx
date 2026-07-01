@@ -343,44 +343,68 @@ export default function App() {
     }
   };
 
-  const handleTimelineMouseMove = (event) => {
+  const getTimelinePercent = (clientX) => {
     const rect = timelineRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const percent = Math.min(Math.max(0, event.clientX - rect.left), rect.width) / rect.width;
-    if (isScrubbing) {
-      event.preventDefault();
-      setProgressPosition(percent);
-      if (videoRef.current) videoRef.current.currentTime = percent * (videoRef.current.duration || 0);
+    if (!rect) return 0;
+    return Math.min(Math.max(0, clientX - rect.left), rect.width) / rect.width;
+  };
+
+  const seekToPosition = (percent) => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const nextTime = percent * (video.duration || 0);
+    const shouldResumePlayback = !video.paused && !video.ended;
+
+    video.currentTime = nextTime;
+    setProgressPosition(percent);
+
+    if (shouldResumePlayback) {
+      video.play().catch(() => undefined);
+      setIsPlaying(true);
+    } else {
+      setIsPlaying(false);
     }
+  };
+
+  const handleTimelineMouseMove = (event) => {
+    if (!isScrubbing) return;
+    event.preventDefault();
+    const percent = getTimelinePercent(event.clientX);
+    seekToPosition(percent);
   };
 
   const handleTimelineMouseDown = (event) => {
-    const rect = timelineRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const percent = Math.min(Math.max(0, event.clientX - rect.left), rect.width) / rect.width;
-    const nextScrubbing = event.buttons === 1;
-    setIsScrubbing(nextScrubbing);
-    if (videoRef.current) {
-      if (nextScrubbing) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.currentTime = percent * (videoRef.current.duration || 0);
-        if (!videoRef.current.paused) videoRef.current.play();
-      }
-    }
-    if (nextScrubbing) {
-      setProgressPosition(percent);
-      if (videoRef.current) videoRef.current.currentTime = percent * (videoRef.current.duration || 0);
-    }
+    if (event.button !== 0) return;
+    event.preventDefault();
+    setIsScrubbing(true);
+    seekToPosition(getTimelinePercent(event.clientX));
+  };
+
+  const handleTimelineClick = (event) => {
+    event.preventDefault();
+    seekToPosition(getTimelinePercent(event.clientX));
+  };
+
+  const handleTimelineTouchStart = (event) => {
+    if (!event.touches?.length) return;
+    event.preventDefault();
+    setIsScrubbing(true);
+    seekToPosition(getTimelinePercent(event.touches[0].clientX));
+  };
+
+  const handleTimelineTouchMove = (event) => {
+    if (!isScrubbing || !event.touches?.length) return;
+    event.preventDefault();
+    seekToPosition(getTimelinePercent(event.touches[0].clientX));
+  };
+
+  const handleTimelineTouchEnd = () => {
+    setIsScrubbing(false);
   };
 
   const handleTimelineMouseUp = () => {
-    if (isScrubbing) {
-      setIsScrubbing(false);
-      if (videoRef.current && !videoRef.current.paused) {
-        videoRef.current.play();
-      }
-    }
+    setIsScrubbing(false);
   };
 
   useEffect(() => {
@@ -523,7 +547,17 @@ export default function App() {
             onTouchStart={scheduleHideControls}
           >
             <div className="video-controls-container" ref={controlsRef}>
-              <div className="timeline-container" ref={timelineRef} onMouseMove={handleTimelineMouseMove} onMouseDown={handleTimelineMouseDown} onMouseUp={handleTimelineMouseUp}>
+              <div
+                className="timeline-container"
+                ref={timelineRef}
+                onMouseMove={handleTimelineMouseMove}
+                onMouseDown={handleTimelineMouseDown}
+                onMouseUp={handleTimelineMouseUp}
+                onClick={handleTimelineClick}
+                onTouchStart={handleTimelineTouchStart}
+                onTouchMove={handleTimelineTouchMove}
+                onTouchEnd={handleTimelineTouchEnd}
+              >
                 <div className="timeline" style={{ '--progress-position': progressPosition }}>
                   <div className="thumb-indicator" style={{ left: `${progressPosition * 100}%` }} />
                 </div>
@@ -560,7 +594,10 @@ export default function App() {
             <video
               id="video-player"
               ref={videoRef}
-              onClick={togglePlay}
+              onClick={(event) => {
+                event.preventDefault();
+                event.stopPropagation();
+              }}
               playsInline
               preload="metadata"
               crossOrigin="anonymous"

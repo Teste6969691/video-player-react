@@ -145,7 +145,8 @@ video {
   pointer-events: none;
 }
 
-.video-controls-container.controls {
+.video-controls-container .timeline-container,
+.video-controls-container .controls {
   pointer-events: auto;
 }
 
@@ -323,16 +324,18 @@ video {
 }
 
 .timeline-container {
-  height: 7px;
+  height: 20px;
   margin-inline: 0.5rem;
   cursor: pointer;
   display: flex;
   align-items: center;
+  touch-action: none;
+  padding: 4px 0;
 }
 
 .timeline {
   background-color: rgba(100, 100, 100, 0.5);
-  height: 3px;
+  height: 8px;
   width: 100%;
   position: relative;
 }
@@ -419,6 +422,7 @@ video {
 .video-card .video-title {
   min-height: 2.6em;
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
