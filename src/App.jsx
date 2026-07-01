@@ -507,7 +507,7 @@ export default function App() {
        <div className="container-main mt-1">
         <div>
           <div className="video-title-container">
-            <h2 className="video-title">{videoTitle}</h2>
+            <h3 className="video-title mb-4">{videoTitle}</h3>
           </div>
           <div
             className={`video-container ${isPlaying ? '' : 'paused'}`}
@@ -552,12 +552,6 @@ export default function App() {
                   /
                   <div className="total-time">{formatDuration(duration)}</div>
                 </div>
-                <button id="random-button" type="button" className={isRandomActive ? 'active-random' : ''} onClick={toggleRandom}>
-                  <i className="fa-solid fa-shuffle" />
-                </button>
-                <button id="loop-button" type="button" className={isLoopActive ? 'active-loop' : ''} onClick={toggleLoop}>
-                  <i className="fa-solid fa-repeat" />
-                </button>
                 <button className="full-screen-btn" type="button" onClick={toggleFullscreen}>
                   <i className="fa-solid fa-expand" />
                 </button>
@@ -572,6 +566,14 @@ export default function App() {
               crossOrigin="anonymous"
             />
           </div>
+
+          <div className="video-actions-container">
+            <button id="random-button" type="button" className={isRandomActive ? 'active-random' : ''} onClick={toggleRandom}>
+              <i className="fa-solid fa-shuffle" /> Aleatório
+            </button>
+            <button id="loop-button-secondary" type="button" className={isLoopActive ? 'active-loop' : ''} onClick={toggleLoop}>
+              <i className="fa-solid fa-repeat" /> Repetir
+            </button>
         </div>
 
         <div className="category-filter-panel mt-4">
@@ -617,6 +619,7 @@ export default function App() {
           </div>
         )}
       </div>
+    </div>
     </>
   );
 }
