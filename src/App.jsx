@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './app.css';
 
-const MAX_VIDEO_INDEX = 92;
+const VIDEOS_DATA_URL = 'https://huggingface.co/api/resolve-cache/datasets/Testefirst44/videos-bunker/5dee3ba036b08a40379f3e278cae30014422ad9e/data.json?%2Fdatasets%2FTestefirst44%2Fvideos-bunker%2Fresolve%2Fvideos%2Fdata.json=&etag=%22841168098a369444226177842498f8e7c40fb9a6%22';
 const VIDEOS_PER_PAGE = 8;
 
 function formatDuration(time) {
@@ -18,20 +18,13 @@ function formatDuration(time) {
   return `${hours}:${leadingZeroFormatter.format(minutes)}:${leadingZeroFormatter.format(seconds)}`;
 }
 
-function getVideoSrc(index) {
-  return `/videos/video${index}.mp4`;
-}
-
-function getThumbnailSrc(index) {
-  return `/images/image${index}.png`;
-}
-
-function findVideoIndexByName(name) {
-  const normalizedName = name.toLowerCase();
-  for (let i = 1; i <= MAX_VIDEO_INDEX; i += 1) {
-    if (`video${i}`.includes(normalizedName)) return i;
+function createShuffledList(items) {
+  const shuffled = [...items];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
   }
-  return null;
+  return shuffled;
 }
 
 export default function App() {
@@ -39,11 +32,13 @@ export default function App() {
   const timelineRef = useRef(null);
   const controlsRef = useRef(null);
   const hideControlsTimeoutRef = useRef(null);
+  const currentVideoRef = useRef(null);
 
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(1);
+  const [videos, setVideos] = useState([]);
+  const [currentVideo, setCurrentVideo] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
-  const [videoTitle, setVideoTitle] = useState('Video 1');
+  const [videoTitle, setVideoTitle] = useState('Carregando vídeo...');
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -54,37 +49,122 @@ export default function App() {
   const [isScrubbing, setIsScrubbing] = useState(false);
   const [progressPosition, setProgressPosition] = useState(0);
   const [volumeLevel, setVolumeLevel] = useState('high');
-  const [videoQueue, setVideoQueue] = useState(() => Array.from({ length: MAX_VIDEO_INDEX }, (_, index) => index + 1));
+  const [videoQueue, setVideoQueue] = useState([]);
   const [randomHistory, setRandomHistory] = useState([]);
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [categoriesInitialized, setCategoriesInitialized] = useState(false);
 
-  const totalPages = Math.ceil(MAX_VIDEO_INDEX / VIDEOS_PER_PAGE);
+  const allCategories = useMemo(() => Array.from(new Set(videos.map((video) => video.categoria).filter(Boolean))), [videos]);
+
+  useEffect(() => {
+    currentVideoRef.current = currentVideo;
+  }, [currentVideo]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch(VIDEOS_DATA_URL)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to load videos');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (!isMounted) return;
+        const normalizedVideos = Array.isArray(data) ? data : [];
+        setVideos(normalizedVideos);
+        if (normalizedVideos[0]) {
+          setCurrentVideo(normalizedVideos[0]);
+          setVideoTitle(normalizedVideos[0].nome || 'Vídeo');
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setVideos([]);
+          setCurrentVideo(null);
+          setVideoTitle('Nenhum vídeo disponível');
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!videos.length || categoriesInitialized || !allCategories.length) return;
+    setSelectedCategories(allCategories);
+    setCategoriesInitialized(true);
+  }, [videos, allCategories, categoriesInitialized]);
+
+  const filteredVideos = useMemo(() => {
+    if (!videos.length || !selectedCategories.length) return [];
+    return videos.filter((video) => selectedCategories.includes(video.categoria));
+  }, [videos, selectedCategories]);
+
+  const galleryVideos = useMemo(() => filteredVideos, [filteredVideos]);
+
+  const totalPages = Math.max(1, Math.ceil(galleryVideos.length / VIDEOS_PER_PAGE));
+
+  useEffect(() => {
+    setCurrentPage((prevPage) => Math.min(prevPage, totalPages));
+  }, [totalPages]);
+
+  useEffect(() => {
+    if (!videos.length) return;
+
+    if (!categoriesInitialized) {
+      if (allCategories.length) {
+        setSelectedCategories(allCategories);
+        setCategoriesInitialized(true);
+      }
+      return;
+    }
+
+    if (!filteredVideos.length) {
+      setCurrentVideo(null);
+      setVideoTitle('Nenhum vídeo disponível');
+      return;
+    }
+
+    if (!currentVideo || !filteredVideos.some((video) => video.nome === currentVideo.nome)) {
+      loadVideo(filteredVideos[0], { pushToHistory: false });
+    }
+  }, [allCategories, categoriesInitialized, currentVideo?.nome, filteredVideos, videos.length]);
 
   const visibleVideos = useMemo(() => {
-    const startIndex = (currentPage - 1) * VIDEOS_PER_PAGE + 1;
-    const endIndex = Math.min(startIndex + VIDEOS_PER_PAGE - 1, MAX_VIDEO_INDEX);
-    return Array.from({ length: endIndex - startIndex + 1 }, (_, index) => startIndex + index);
-  }, [currentPage]);
+    const startIndex = (currentPage - 1) * VIDEOS_PER_PAGE;
+    return galleryVideos.slice(startIndex, startIndex + VIDEOS_PER_PAGE);
+  }, [galleryVideos, currentPage]);
 
-  const loadVideo = (index) => {
-    const safeIndex = Math.min(Math.max(1, index), MAX_VIDEO_INDEX);
-    setCurrentVideoIndex(safeIndex);
-    setVideoTitle(`Video ${safeIndex}`);
+  const loadVideo = (video, options = {}) => {
+    if (!video) return;
+
+    const shouldRecordHistory = options.pushToHistory !== false;
+    const previousVideo = currentVideoRef.current;
+
+    if (shouldRecordHistory && previousVideo && previousVideo.nome !== video.nome) {
+      setRandomHistory((prev) => [...prev, previousVideo]);
+    }
+
+    setCurrentVideo(video);
+    setVideoTitle(video.nome || 'Vídeo');
+
     if (videoRef.current) {
-      videoRef.current.src = getVideoSrc(safeIndex);
+      videoRef.current.src = video.url_video;
+      videoRef.current.poster = video.url_thumbnail;
       videoRef.current.load();
-      const playPromise = videoRef.current.play();
-      if (playPromise && typeof playPromise.catch === 'function') {
-        playPromise.catch(() => undefined);
-      }
-      setIsPlaying(true);
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+      setProgressPosition(0);
     }
   };
 
   useEffect(() => {
-    loadVideo(1);
-  }, []);
+    if (!currentVideo) return undefined;
 
-  useEffect(() => {
     const video = videoRef.current;
     if (!video) return undefined;
 
@@ -107,11 +187,20 @@ export default function App() {
     };
 
     const handleEnded = () => {
+      if (isLoopActive) {
+        video.currentTime = 0;
+        video.play().catch(() => undefined);
+        return;
+      }
+
       if (isRandomActive) {
         getRandomVideo();
       } else {
-        const nextIndex = currentVideoIndex < MAX_VIDEO_INDEX ? currentVideoIndex + 1 : 1;
-        loadVideo(nextIndex);
+        const currentIndex = filteredVideos.findIndex((videoItem) => videoItem.nome === currentVideo?.nome);
+        const nextVideo = filteredVideos[(currentIndex + 1) % filteredVideos.length] || filteredVideos[0];
+        if (nextVideo) {
+          loadVideo(nextVideo);
+        }
       }
     };
 
@@ -145,7 +234,7 @@ export default function App() {
       video.removeEventListener('pause', handlePause);
       video.removeEventListener('volumechange', handleVolumeChange);
     };
-  }, [currentVideoIndex, isRandomActive]);
+  }, [currentVideo?.nome, filteredVideos, isLoopActive, isRandomActive]);
 
   useEffect(() => {
     const handleKeyDown = (event) => {
@@ -179,7 +268,7 @@ export default function App() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [currentVideoIndex, isPlaying, isMuted, volume, isLoopActive, isRandomActive]);
+  }, [currentVideo?.nome, isPlaying, isMuted, volume, isLoopActive, isRandomActive]);
 
   const togglePlay = () => {
     const video = videoRef.current;
@@ -282,54 +371,70 @@ export default function App() {
     setVolumeLevel(nextValue === 0 ? 'muted' : nextValue >= 0.5 ? 'high' : 'low');
   };
 
-  const handleVideoSelect = (index) => {
-    setCurrentPage(1);
-    loadVideo(index);
+  const handleVideoSelect = (video) => {
+    loadVideo(video);
   };
 
   const goToPrevious = () => {
     if (isRandomActive) {
       const nextHistory = [...randomHistory];
-      if (nextHistory.length > 1) {
-        nextHistory.pop();
-        const previousIndex = nextHistory[nextHistory.length - 1];
+      const previousVideo = nextHistory.pop();
+      if (previousVideo) {
         setRandomHistory(nextHistory);
-        loadVideo(previousIndex);
+        loadVideo(previousVideo, { pushToHistory: false });
       }
-    } else if (currentVideoIndex > 1) {
-      loadVideo(currentVideoIndex - 1);
-    }
-  };
-
-  const getRandomVideo = () => {
-    if (videoQueue.length === 0) {
-      setVideoQueue(Array.from({ length: MAX_VIDEO_INDEX }, (_, index) => index + 1));
       return;
     }
 
-    const nextQueue = [...videoQueue];
-    const randomIndex = Math.floor(Math.random() * nextQueue.length);
-    const selectedIndex = nextQueue[randomIndex];
-    nextQueue.splice(randomIndex, 1);
-    setVideoQueue(nextQueue);
-    setRandomHistory((prev) => [...prev, selectedIndex]);
-    loadVideo(selectedIndex);
+    if (!currentVideo) return;
+    const currentIndex = filteredVideos.findIndex((videoItem) => videoItem.nome === currentVideo.nome);
+    if (currentIndex <= 0) {
+      const previousVideo = filteredVideos[filteredVideos.length - 1];
+      if (previousVideo) {
+        loadVideo(previousVideo);
+      }
+      return;
+    }
+
+    loadVideo(filteredVideos[currentIndex - 1]);
+  };
+
+  const getRandomVideo = () => {
+    if (!filteredVideos.length) return;
+
+    if (videoQueue.length === 0) {
+      const fallbackQueue = createShuffledList(filteredVideos.filter((videoItem) => videoItem.nome !== currentVideo?.nome));
+      if (!fallbackQueue.length) return;
+      setVideoQueue(fallbackQueue.slice(1));
+      loadVideo(fallbackQueue[0], { pushToHistory: true });
+      return;
+    }
+
+    const [nextVideo, ...restQueue] = videoQueue;
+    setVideoQueue(restQueue);
+    loadVideo(nextVideo, { pushToHistory: true });
   };
 
   const goToNext = () => {
     if (isRandomActive) {
       getRandomVideo();
-    } else {
-      const nextIndex = currentVideoIndex < MAX_VIDEO_INDEX ? currentVideoIndex + 1 : 1;
-      loadVideo(nextIndex);
+      return;
+    }
+
+    if (!currentVideo) return;
+    const currentIndex = filteredVideos.findIndex((videoItem) => videoItem.nome === currentVideo.nome);
+    const nextVideo = filteredVideos[(currentIndex + 1) % filteredVideos.length] || filteredVideos[0];
+    if (nextVideo) {
+      loadVideo(nextVideo);
     }
   };
 
   const handleSearch = () => {
-    const match = findVideoIndexByName(searchTerm);
+    const match = videos.find((video) => video.nome.toLowerCase().includes(searchTerm.toLowerCase()));
     if (match) {
       loadVideo(match);
       setSearchTerm('');
+      setCurrentPage(1);
     } else {
       window.alert('Vídeo não encontrado. Tente outro termo de pesquisa.');
     }
@@ -343,8 +448,20 @@ export default function App() {
   };
 
   const toggleRandom = () => {
-    setIsRandomActive((prev) => !prev);
+    const nextValue = !isRandomActive;
+    setIsRandomActive(nextValue);
     setRandomHistory([]);
+    if (nextValue) {
+      const nextQueue = createShuffledList(filteredVideos.filter((videoItem) => videoItem.nome !== currentVideo?.nome));
+      setVideoQueue(nextQueue);
+    } else {
+      setVideoQueue([]);
+    }
+  };
+
+  const handleCategoryChange = (event) => {
+    const nextValues = Array.from(event.target.selectedOptions, (option) => option.value);
+    setSelectedCategories(nextValues);
   };
 
   const handlePageChange = (page) => {
@@ -382,7 +499,6 @@ export default function App() {
             <h2 className="video-title">{videoTitle}</h2>
           </div>
           <div className={`video-container ${isPlaying ? '' : 'paused'}`} data-volume-level={volumeLevel}>
-            <img className="thumbnail-img" src={getThumbnailSrc(currentVideoIndex)} alt={videoTitle} />
             <div className="video-controls-container" ref={controlsRef}>
               <div className="timeline-container" ref={timelineRef} onMouseMove={handleTimelineMouseMove} onMouseDown={handleTimelineMouseDown} onMouseUp={handleTimelineMouseUp}>
                 <div className="timeline" style={{ '--progress-position': progressPosition }}>
@@ -424,17 +540,26 @@ export default function App() {
                 </button>
               </div>
             </div>
-            <video id="video-player" ref={videoRef} onClick={togglePlay}>
-              <source src={getVideoSrc(currentVideoIndex)} type="video/mp4" />
-            </video>
+            <video id="video-player" ref={videoRef} onClick={togglePlay} playsInline />
           </div>
         </div>
 
+        <div className="mt-4">
+          <label className="mb-2 d-block" htmlFor="category-filter">Categorias</label>
+          <select id="category-filter" className="form-select" multiple value={selectedCategories} onChange={handleCategoryChange} size={Math.min(Math.max(allCategories.length, 1), 5)}>
+            {allCategories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div id="video-list" className="video-list mt-5">
-          {visibleVideos.map((videoIndex) => (
-            <div key={videoIndex} className="video-card" onClick={() => handleVideoSelect(videoIndex)} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter') handleVideoSelect(videoIndex); }}>
-              <div className="video-title">Vídeo {videoIndex}</div>
-              <img className="video-frame" src={getThumbnailSrc(videoIndex)} alt={`Vídeo ${videoIndex}`} />
+          {visibleVideos.map((video) => (
+            <div key={video.nome} className="video-card" onClick={() => handleVideoSelect(video)} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter') handleVideoSelect(video); }}>
+              <div className="video-title">{video.nome}</div>
+              <img className="video-frame" src={video.url_thumbnail} alt={video.nome} />
             </div>
           ))}
         </div>
