@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './app.css';
 
-const VIDEOS_DATA_URL = 'https://huggingface.co/datasets/Testefirst44/videos-bunker/raw/videos/data.json';
+const VIDEOS_DATA_URL = 'https://huggingface.co/datasets/Testefirst44/videos-bunker/raw/videos/data_test.json';
 const VIDEOS_PER_PAGE = 8;
 
 function formatDuration(time) {
@@ -31,6 +31,7 @@ export default function App() {
   const videoRef = useRef(null);
   const timelineRef = useRef(null);
   const controlsRef = useRef(null);
+  const controlsUpRef = useRef(null);
   const hideControlsTimeoutRef = useRef(null);
   const controlsReappearTimeoutRef = useRef(null);
   const currentVideoRef = useRef(null);
@@ -303,15 +304,21 @@ export default function App() {
     video.currentTime = Math.min(Math.max(0, video.currentTime + amount), video.duration || 0);
   };
 
+  const setControlsOpacity = (opacity) => {
+    [controlsRef.current, controlsUpRef.current].forEach((controlElement) => {
+      if (controlElement) {
+        controlElement.style.opacity = opacity;
+      }
+    });
+  };
+
   const showControls = () => {
-    if (controlsRef.current) {
-      controlsRef.current.style.opacity = '1';
-    }
+    setControlsOpacity('1');
   };
 
   const hideControls = () => {
-    if (controlsRef.current && !videoRef.current?.paused) {
-      controlsRef.current.style.opacity = '0';
+    if (!videoRef.current?.paused) {
+      setControlsOpacity('0');
     }
   };
 
@@ -330,7 +337,7 @@ export default function App() {
   };
 
   const toggleFullscreen = () => {
-    const videoContainer = controlsRef.current?.closest('.video-container');
+    const videoContainer = controlsRef.current?.closest('.video-container') || controlsUpRef.current?.closest('.video-container');
     if (!videoContainer) return;
     if (!document.fullscreenElement) {
       videoContainer.requestFullscreen();
@@ -546,6 +553,17 @@ export default function App() {
             }}
             onTouchStart={scheduleHideControls}
           >
+            <div className="video-controls-container-up" ref={controlsUpRef}>
+             
+              <div className="controls">
+                <button id="prev-button" type="button" onClick={goToPrevious}>
+                  <i className="fa-solid fa-backward" />
+                </button>
+                <button id="next-button" type="button" onClick={goToNext}>
+                  <i className="fa-solid fa-forward" />
+                </button>
+              </div>
+            </div>
             <div className="video-controls-container" ref={controlsRef}>
               <div
                 className="timeline-container"
@@ -563,15 +581,15 @@ export default function App() {
                 </div>
               </div>
               <div className="controls">
-                <button id="prev-button" type="button" onClick={goToPrevious}>
-                  <i className="fa-solid fa-backward" />
+                <button id="prev-button" type="button" onClick={() => skip(-5)}>
+                  <i className="fa-solid fa-rotate-left" />
                 </button>
                 <button className="play-pause-btn" type="button" onClick={togglePlay}>
                   <i className={`play-icon fa-solid fa-play ${isPlaying ? 'd-none' : ''}`} />
                   <i className={`pause-icon fa-solid fa-pause ${!isPlaying ? 'd-none' : ''}`} />
                 </button>
-                <button id="next-button" type="button" onClick={goToNext}>
-                  <i className="fa-solid fa-forward" />
+                <button id="next-button" type="button" onClick={() => skip(5)}>
+                  <i className="fa-solid fa-rotate-right" />
                 </button>
                 <div className="volume-container">
                   <button className="mute-btn" type="button" onClick={toggleMute}>
@@ -594,10 +612,7 @@ export default function App() {
             <video
               id="video-player"
               ref={videoRef}
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-              }}
+              onClick={togglePlay}
               playsInline
               preload="metadata"
               crossOrigin="anonymous"

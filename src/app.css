@@ -131,6 +131,73 @@ video {
 }
 
 /* ============================================
+   VIDEO CONTROLS CONTAINER UP
+   ============================================ */
+
+.video-controls-container-up {
+  position: absolute;
+  bottom: 2;
+  left: 0;
+  right: 0;
+  color: white;
+  z-index: 100;
+  opacity: 1;
+  transition: opacity 300ms ease-in-out;
+  pointer-events: none;
+}
+
+.video-controls-container-up .controls {
+  pointer-events: auto;
+}
+
+.video-controls-container-up::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.75), transparent);
+  width: 100%;
+  aspect-ratio: 6 / 1;
+  z-index: -1;
+  pointer-events: none;
+}
+
+
+.video-controls-container-up .controls {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  justify-content: start;
+  align-items: center;
+  flex-wrap: wrap;
+  pointer-events: auto;
+}
+
+.video-controls-container-up .controls button {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  padding: 8px;
+  height: 40px;
+  width: 40px;
+  font-size: 1.3rem;
+  cursor: pointer;
+  opacity: 0.9;
+  transition: all 150ms ease-in-out;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-controls-container-up .controls button:hover {
+  background: rgba(255, 133, 51, 0.3);
+  color: #ff8533;
+  opacity: 1;
+  transform: scale(1.1);
+  border-color: #ff8533;
+}
+
+/* ============================================
    VIDEO CONTROLS CONTAINER
    ============================================ */
 .video-controls-container {
