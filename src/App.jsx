@@ -680,7 +680,7 @@ export default function App() {
                 <i className="fa-solid fa-forward" />
               </button>
             </div>
-            <div>
+            <div className="secondary">
               <button id="first-page-button" className="btn me-2" type="button" onClick={() => handlePageChange(1)}>Primeira</button>
               <button id="last-page-button" className="btn" type="button" onClick={() => handlePageChange(totalPages)}>Última</button>
             </div>
