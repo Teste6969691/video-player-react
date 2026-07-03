@@ -27,6 +27,23 @@ function createShuffledList(items) {
   return shuffled;
 }
 
+function normalizeVideos(data) {
+  if (!Array.isArray(data)) return [];
+
+  return data.map((video) => {
+    const rawCategories = Array.isArray(video?.categorias)
+      ? video.categorias
+      : video?.categoria
+        ? [video.categoria]
+        : [];
+
+    return {
+      ...video,
+      categorias: rawCategories.filter(Boolean),
+    };
+  });
+}
+
 export default function App() {
   const videoRef = useRef(null);
   const timelineRef = useRef(null);
@@ -55,7 +72,7 @@ export default function App() {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categoriesInitialized, setCategoriesInitialized] = useState(false);
 
-  const allCategories = useMemo(() => Array.from(new Set(videos.map((video) => video.categoria).filter(Boolean))), [videos]);
+  const allCategories = useMemo(() => Array.from(new Set(videos.flatMap((video) => video.categorias || []).filter(Boolean))), [videos]);
 
   useEffect(() => {
     currentVideoRef.current = currentVideo;
@@ -73,7 +90,7 @@ export default function App() {
       })
       .then((data) => {
         if (!isMounted) return;
-        const normalizedVideos = Array.isArray(data) ? data : [];
+        const normalizedVideos = normalizeVideos(data);
         setVideos(normalizedVideos);
         setCurrentVideo(null);
         setVideoTitle(normalizedVideos[0] ? 'Carregando vídeo...' : 'Nenhum vídeo disponível');
@@ -99,7 +116,7 @@ export default function App() {
 
   const filteredVideos = useMemo(() => {
     if (!videos.length || !selectedCategories.length) return [];
-    return videos.filter((video) => selectedCategories.includes(video.categoria));
+    return videos.filter((video) => video.categorias?.some((category) => selectedCategories.includes(category)));
   }, [videos, selectedCategories]);
 
   const galleryItems = useMemo(() => filteredVideos, [filteredVideos]);
@@ -132,8 +149,10 @@ export default function App() {
     }
 
     if (!currentVideo || !filteredVideos.some((video) => video.nome === currentVideo.nome)) {
-      const randomVideo = filteredVideos[Math.floor(Math.random() * filteredVideos.length)];
-      loadVideo(randomVideo, { pushToHistory: false });
+      const initialVideo = filteredVideos[0];
+      if (initialVideo) {
+        loadVideo(initialVideo, { pushToHistory: false });
+      }
     }
   }, [allCategories, categoriesInitialized, currentVideo?.nome, filteredVideos, videos.length]);
 

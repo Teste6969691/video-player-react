@@ -4,7 +4,7 @@ import App from './App';
 
 const videosFixture = Array.from({ length: 9 }, (_, index) => ({
   nome: `video-${String(index + 1).padStart(2, '0')}`,
-  categoria: index % 2 === 0 ? '2d' : '3d',
+  categorias: index % 2 === 0 ? ['2d'] : ['3d'],
   url_video: `https://example.com/video-${index + 1}.mp4`,
   url_thumbnail: `https://example.com/thumb-${index + 1}.webp`,
 }));
@@ -39,13 +39,13 @@ describe('App', () => {
   it('paginates the gallery with up to 8 items per page', async () => {
     render(<App />);
 
-    expect(await screen.findByText(/video-01/i)).toBeInTheDocument();
-    expect(screen.queryByText(/video-09/i)).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: /video-01/i })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /video-09/i })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: /próxima página/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/video-09/i)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /video-09/i })).toBeInTheDocument();
     });
   });
 
@@ -53,7 +53,7 @@ describe('App', () => {
     const playSpy = vi.spyOn(HTMLMediaElement.prototype, 'play').mockResolvedValue(undefined);
     render(<App />);
 
-    await screen.findByText(/video-01/i);
+    await screen.findAllByText(/video-01/i);
     const nextButton = document.getElementById('next-button');
     fireEvent.click(nextButton);
 
