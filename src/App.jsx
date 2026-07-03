@@ -109,14 +109,14 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (!videos.length || categoriesInitialized || !allCategories.length) return;
-    setSelectedCategories(allCategories);
+    if (!videos.length || categoriesInitialized) return;
     setCategoriesInitialized(true);
-  }, [videos, allCategories, categoriesInitialized]);
+  }, [videos.length, categoriesInitialized]);
 
   const filteredVideos = useMemo(() => {
-    if (!videos.length || !selectedCategories.length) return [];
-    return videos.filter((video) => video.categorias?.some((category) => selectedCategories.includes(category)));
+    if (!videos.length) return [];
+    if (!selectedCategories.length) return videos;
+    return videos.filter((video) => selectedCategories.every((category) => video.categorias?.includes(category)));
   }, [videos, selectedCategories]);
 
   const galleryItems = useMemo(() => filteredVideos, [filteredVideos]);
@@ -135,10 +135,7 @@ export default function App() {
     if (!videos.length) return;
 
     if (!categoriesInitialized) {
-      if (allCategories.length) {
-        setSelectedCategories(allCategories);
-        setCategoriesInitialized(true);
-      }
+      setCategoriesInitialized(true);
       return;
     }
 
@@ -545,7 +542,7 @@ export default function App() {
   };
 
   const selectAllCategories = () => {
-    setSelectedCategories(allCategories);
+    setSelectedCategories([]);
   };
 
   const handlePageChange = (page) => {

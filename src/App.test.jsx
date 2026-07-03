@@ -21,18 +21,19 @@ describe('App', () => {
     vi.restoreAllMocks();
   });
 
-  it('renders the player controls and filters videos by category', async () => {
+  it('filters videos by requiring all selected categories', async () => {
     render(<App />);
 
     expect((await screen.findAllByText(/video-01/i)).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /primeira/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /última/i })).toBeInTheDocument();
 
-    const categoryButton = screen.getByRole('button', { name: /2d/i });
-    fireEvent.click(categoryButton);
+    fireEvent.click(screen.getByRole('button', { name: /2d/i }));
+    fireEvent.click(screen.getByRole('button', { name: /3d/i }));
 
     await waitFor(() => {
-      expect(screen.queryByText(/video-01/i)).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /video-01/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /video-02/i })).not.toBeInTheDocument();
     });
   });
 
