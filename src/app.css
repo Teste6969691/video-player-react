@@ -590,6 +590,11 @@ video {
   font-size: 0.9rem;
 }
 
+.category-toggle-all--blocked {
+  background: rgba(220, 53, 69, 0.15);
+  color: #ff7b7b;
+}
+c
 .category-pill-group {
   display: flex;
   flex-wrap: wrap;
@@ -610,6 +615,17 @@ video {
   color: white;
   border-color: transparent;
   box-shadow: 0 8px 20px rgba(255, 107, 26, 0.25);
+}
+
+.category-pill.blocked-pill {
+  border-color: rgba(255, 107, 107, 0.25);
+}
+
+.category-pill.blocked-active {
+  background: linear-gradient(135deg, #dc3545, #b02a37);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 8px 20px rgba(220, 53, 69, 0.25);
 }
 
 /* ============================================

@@ -28,12 +28,25 @@ describe('App', () => {
     expect(screen.getByRole('button', { name: /primeira/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /última/i })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /2d/i }));
-    fireEvent.click(screen.getByRole('button', { name: /3d/i }));
+    fireEvent.click(screen.getByRole('button', { name: /selecionar categoria 2d/i }));
+    fireEvent.click(screen.getByRole('button', { name: /selecionar categoria 3d/i }));
 
     await waitFor(() => {
       expect(screen.queryByRole('button', { name: /video-01/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /video-02/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it('blocks videos that belong to a blacklisted category', async () => {
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: /video-01/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /bloquear categoria 2d/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /video-01/i })).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /video-02/i })).toBeInTheDocument();
     });
   });
 

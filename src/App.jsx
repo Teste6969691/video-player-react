@@ -70,6 +70,7 @@ export default function App() {
   const [videoQueue, setVideoQueue] = useState([]);
   const [randomHistory, setRandomHistory] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [blockedCategories, setBlockedCategories] = useState([]);
   const [categoriesInitialized, setCategoriesInitialized] = useState(false);
 
   const allCategories = useMemo(() => Array.from(new Set(videos.flatMap((video) => video.categorias || []).filter(Boolean))), [videos]);
@@ -115,9 +116,13 @@ export default function App() {
 
   const filteredVideos = useMemo(() => {
     if (!videos.length) return [];
-    if (!selectedCategories.length) return videos;
-    return videos.filter((video) => selectedCategories.every((category) => video.categorias?.includes(category)));
-  }, [videos, selectedCategories]);
+
+    return videos.filter((video) => {
+      const matchesSelectedCategories = !selectedCategories.length || selectedCategories.every((category) => video.categorias?.includes(category));
+      const isBlocked = blockedCategories.some((category) => video.categorias?.includes(category));
+      return matchesSelectedCategories && !isBlocked;
+    });
+  }, [videos, selectedCategories, blockedCategories]);
 
   const galleryItems = useMemo(() => filteredVideos, [filteredVideos]);
   const totalPages = Math.max(1, Math.ceil(galleryItems.length / VIDEOS_PER_PAGE));
@@ -129,7 +134,7 @@ export default function App() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategories.join('|')]);
+  }, [selectedCategories.join('|'), blockedCategories.join('|')]);
 
   useEffect(() => {
     if (!videos.length) return;
@@ -541,8 +546,22 @@ export default function App() {
     });
   };
 
+  const toggleBlockedCategory = (category) => {
+    setBlockedCategories((prevCategories) => {
+      if (prevCategories.includes(category)) {
+        return prevCategories.filter((item) => item !== category);
+      }
+      return [...prevCategories, category];
+    });
+    setSelectedCategories((prevCategories) => prevCategories.filter((item) => item !== category));
+  };
+
   const selectAllCategories = () => {
     setSelectedCategories([]);
+  };
+
+  const clearBlockedCategories = () => {
+    setBlockedCategories([]);
   };
 
   const handlePageChange = (page) => {
@@ -653,7 +672,33 @@ export default function App() {
           </div>
           <div className="category-pill-group">
             {allCategories.map((category) => (
-              <button key={category} type="button" className={`category-pill ${selectedCategories.includes(category) ? 'active' : ''}`} onClick={() => toggleCategory(category)}>
+              <button
+                key={category}
+                type="button"
+                className={`category-pill ${selectedCategories.includes(category) ? 'active' : ''}`}
+                aria-label={`Selecionar categoria ${category}`}
+                onClick={() => toggleCategory(category)}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
+          <div className="category-filter-header mt-3">
+            <span className="category-filter-title">Blacklist</span>
+            <button type="button" className="category-toggle-all category-toggle-all--blocked" onClick={clearBlockedCategories}>
+              Limpar
+            </button>
+          </div>
+          <div className="category-pill-group">
+            {allCategories.map((category) => (
+              <button
+                key={`${category}-blocked`}
+                type="button"
+                className={`category-pill blocked-pill ${blockedCategories.includes(category) ? 'active blocked-active' : ''}`}
+                aria-label={`Bloquear categoria ${category}`}
+                onClick={() => toggleBlockedCategory(category)}
+              >
                 {category}
               </button>
             ))}
