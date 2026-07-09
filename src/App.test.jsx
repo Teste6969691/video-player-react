@@ -118,6 +118,20 @@ describe('App', () => {
     });
   });
 
+  it('shows an overflow indicator when metadata pills exceed the visible limit', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { nome: 'video-overflow', categories: ['2d', '3d', '4d', '5d'], authors: ['Ana', 'Bruno', 'Carla'], tags: ['anime', 'loop', 'music', 'edit'], url_video: 'https://example.com/overflow.mp4', url_thumbnail: 'https://example.com/overflow.webp' },
+      ],
+    }));
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: /video-overflow/i })).toBeInTheDocument();
+    expect(screen.getAllByText(/\+\d+/i, { selector: '.metadata-pill.metadata-pill--overflow:not(.metadata-pill--overflow-measure)' }).length).toBe(1);
+  });
+
   it('paginates the gallery with up to 8 items per page', async () => {
     render(<App />);
 

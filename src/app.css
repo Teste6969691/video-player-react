@@ -518,10 +518,13 @@ video {
 
 .metadata-pill-group {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
-  gap: 6px;
+  gap: 5px;
   margin-top: 6px;
+  max-width: 100%;
+  overflow: hidden;
+  align-items: center;
 }
 
 .metadata-pill {
@@ -535,6 +538,21 @@ video {
   letter-spacing: 0.2px;
   color: white;
   white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.metadata-pill-measurer {
+  position: absolute;
+  visibility: hidden;
+  pointer-events: none;
+  height: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  z-index: -1;
+}
+
+.metadata-pill-measurer .metadata-pill {
+  position: relative;
 }
 
 .metadata-pill--category {
@@ -547,6 +565,12 @@ video {
 
 .metadata-pill--tag {
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.metadata-pill--overflow {
+  opacity: 0.9;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 /* ============================================
