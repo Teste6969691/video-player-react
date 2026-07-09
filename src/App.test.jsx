@@ -95,6 +95,29 @@ describe('App', () => {
     });
   });
 
+  it('supports union mode for metadata filters', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { nome: 'video-union-1', categories: ['2d'], authors: ['Ana'], tags: ['anime'], url_video: 'https://example.com/union-1.mp4', url_thumbnail: 'https://example.com/union-1.webp' },
+        { nome: 'video-union-2', categories: ['3d'], authors: ['Bruno'], tags: ['loop'], url_video: 'https://example.com/union-2.mp4', url_thumbnail: 'https://example.com/union-2.webp' },
+      ],
+    }));
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: /video-union-1/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /selecionar autor ana/i }));
+    fireEvent.click(screen.getByRole('button', { name: /selecionar tag loop/i }));
+    fireEvent.click(screen.getByRole('button', { name: /união/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /video-union-1/i })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /video-union-2/i })).toBeInTheDocument();
+    });
+  });
+
   it('paginates the gallery with up to 8 items per page', async () => {
     render(<App />);
 

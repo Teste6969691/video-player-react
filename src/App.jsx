@@ -90,6 +90,7 @@ export default function App() {
   const [selectedAuthors, setSelectedAuthors] = useState([]);
   const [selectedTags, setSelectedTags] = useState([]);
   const [blockedCategories, setBlockedCategories] = useState([]);
+  const [filterMode, setFilterMode] = useState('intersection');
   const [categoriesInitialized, setCategoriesInitialized] = useState(false);
 
   const allCategories = useMemo(() => Array.from(new Set(videos.flatMap((video) => video.categorias || []).filter(Boolean))), [videos]);
@@ -139,13 +140,30 @@ export default function App() {
     if (!videos.length) return [];
 
     return videos.filter((video) => {
-      const matchesSelectedCategories = !selectedCategories.length || selectedCategories.every((category) => video.categorias?.includes(category));
-      const matchesSelectedAuthors = !selectedAuthors.length || selectedAuthors.every((author) => video.authors?.includes(author));
-      const matchesSelectedTags = !selectedTags.length || selectedTags.every((tag) => video.tags?.includes(tag));
+      const categoryMatches = selectedCategories.length === 0
+        ? true
+        : selectedCategories.every((category) => video.categorias?.includes(category));
+
+      const authorMatches = selectedAuthors.length === 0
+        ? true
+        : selectedAuthors.every((author) => video.authors?.includes(author));
+
+      const tagMatches = selectedTags.length === 0
+        ? true
+        : selectedTags.every((tag) => video.tags?.includes(tag));
+
+      const metadataMatches = filterMode === 'union'
+        ? (
+            (!selectedCategories.length || selectedCategories.some((category) => video.categorias?.includes(category)))
+            || (!selectedAuthors.length || selectedAuthors.some((author) => video.authors?.includes(author)))
+            || (!selectedTags.length || selectedTags.some((tag) => video.tags?.includes(tag)))
+          )
+        : categoryMatches && authorMatches && tagMatches;
+
       const isBlocked = blockedCategories.some((category) => video.categorias?.includes(category));
-      return matchesSelectedCategories && matchesSelectedAuthors && matchesSelectedTags && !isBlocked;
+      return metadataMatches && !isBlocked;
     });
-  }, [videos, selectedCategories, selectedAuthors, selectedTags, blockedCategories]);
+  }, [videos, selectedCategories, selectedAuthors, selectedTags, blockedCategories, filterMode]);
 
   const galleryItems = useMemo(() => filteredVideos, [filteredVideos]);
   const totalPages = Math.max(1, Math.ceil(galleryItems.length / VIDEOS_PER_PAGE));
@@ -157,7 +175,7 @@ export default function App() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategories.join('|'), selectedAuthors.join('|'), selectedTags.join('|'), blockedCategories.join('|')]);
+  }, [selectedCategories.join('|'), selectedAuthors.join('|'), selectedTags.join('|'), blockedCategories.join('|'), filterMode]);
 
   useEffect(() => {
     if (!videos.length) return;
@@ -613,6 +631,10 @@ export default function App() {
     setBlockedCategories([]);
   };
 
+  const toggleFilterMode = () => {
+    setFilterMode((prevMode) => (prevMode === 'intersection' ? 'union' : 'intersection'));
+  };
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -713,11 +735,20 @@ export default function App() {
         </div>
 
         <div className="category-filter-panel mt-4">
-          <div className="category-filter-header">
+          <div className="category-filter-header compact-filter-header">
+            <span className="category-filter-title">Filtros</span>
+            <div className="filter-mode-group">
+              <button type="button" className={`filter-mode-button ${filterMode === 'intersection' ? 'active' : ''}`} onClick={toggleFilterMode}>
+                Interseção
+              </button>
+              <button type="button" className={`filter-mode-button ${filterMode === 'union' ? 'active' : ''}`} onClick={toggleFilterMode}>
+                União
+              </button>
+            </div>
+          </div>
+
+          <div className="category-filter-header compact-filter-header">
             <span className="category-filter-title">Categorias</span>
-            <button type="button" className="category-toggle-all" onClick={selectAllCategories}>
-              Todas
-            </button>
           </div>
           <div className="category-pill-group">
             {allCategories.map((category) => (
@@ -733,11 +764,9 @@ export default function App() {
             ))}
           </div>
 
-          <div className="category-filter-header mt-3">
+          <div className="category-filter-header mt-2 compact-filter-header">
             <span className="category-filter-title">Autores</span>
-            <button type="button" className="category-toggle-all category-toggle-all--author" onClick={selectAllAuthors}>
-              Todos
-            </button>
+          
           </div>
           <div className="category-pill-group">
             {allAuthors.map((author) => (
@@ -753,11 +782,8 @@ export default function App() {
             ))}
           </div>
 
-          <div className="category-filter-header mt-3">
+          <div className="category-filter-header mt-2 compact-filter-header">
             <span className="category-filter-title">Tags</span>
-            <button type="button" className="category-toggle-all category-toggle-all--tag" onClick={selectAllTags}>
-              Todas
-            </button>
           </div>
           <div className="category-pill-group">
             {allTags.map((tag) => (
@@ -773,7 +799,7 @@ export default function App() {
             ))}
           </div>
 
-          <div className="category-filter-header mt-3">
+          <div className="category-filter-header mt-2 compact-filter-header">
             <span className="category-filter-title">Blacklist</span>
             <button type="button" className="category-toggle-all category-toggle-all--blocked" onClick={clearBlockedCategories}>
               Limpar
