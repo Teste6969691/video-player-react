@@ -91,6 +91,7 @@ export default function App() {
   const [selectedTags, setSelectedTags] = useState([]);
   const [blockedCategories, setBlockedCategories] = useState([]);
   const [filterMode, setFilterMode] = useState('intersection');
+  const [isFiltersCollapsed, setIsFiltersCollapsed] = useState(true);
   const [categoriesInitialized, setCategoriesInitialized] = useState(false);
 
   const allCategories = useMemo(() => Array.from(new Set(videos.flatMap((video) => video.categorias || []).filter(Boolean))), [videos]);
@@ -635,6 +636,10 @@ export default function App() {
     setFilterMode((prevMode) => (prevMode === 'intersection' ? 'union' : 'intersection'));
   };
 
+  const toggleFiltersCollapsed = () => {
+    setIsFiltersCollapsed((prevCollapsed) => !prevCollapsed);
+  };
+
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
@@ -736,88 +741,96 @@ export default function App() {
 
         <div className="category-filter-panel mt-4">
           <div className="category-filter-header compact-filter-header">
-            <span className="category-filter-title">Filtros</span>
-            <div className="filter-mode-group">
-              <button type="button" className={`filter-mode-button ${filterMode === 'intersection' ? 'active' : ''}`} onClick={toggleFilterMode}>
-                Interseção
+            <span className="category-filter-title-filters">Filtros</span>
+            <div className="filter-toolbar">
+              <button type="button" className="filter-toggle-button" onClick={toggleFiltersCollapsed}>
+                {isFiltersCollapsed ? 'Expandir' : 'Minimizar'}
               </button>
-              <button type="button" className={`filter-mode-button ${filterMode === 'union' ? 'active' : ''}`} onClick={toggleFilterMode}>
-                União
-              </button>
+              <div className="filter-mode-group">
+                <button type="button" className={`filter-mode-button ${filterMode === 'intersection' ? 'active' : ''}`} onClick={toggleFilterMode}>
+                  Interseção
+                </button>
+                <button type="button" className={`filter-mode-button ${filterMode === 'union' ? 'active' : ''}`} onClick={toggleFilterMode}>
+                  União
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="category-filter-header compact-filter-header">
-            <span className="category-filter-title">Categorias</span>
-          </div>
-          <div className="category-pill-group">
-            {allCategories.map((category) => (
-              <button
-                key={category}
-                type="button"
-                className={`category-pill category-pill--category ${selectedCategories.includes(category) ? 'active' : ''}`}
-                aria-label={`Selecionar categoria ${category}`}
-                onClick={() => toggleCategory(category)}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
+          {!isFiltersCollapsed && (
+            <>
+              <div className="category-filter-header compact-filter-header">
+                <span className="category-filter-title">Categorias</span>
+              </div>
+              <div className="category-pill-group">
+                {allCategories.map((category) => (
+                  <button
+                    key={category}
+                    type="button"
+                    className={`category-pill category-pill--category ${selectedCategories.includes(category) ? 'active' : ''}`}
+                    aria-label={`Selecionar categoria ${category}`}
+                    onClick={() => toggleCategory(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
 
-          <div className="category-filter-header mt-2 compact-filter-header">
-            <span className="category-filter-title">Autores</span>
-          
-          </div>
-          <div className="category-pill-group">
-            {allAuthors.map((author) => (
-              <button
-                key={author}
-                type="button"
-                className={`category-pill category-pill--author ${selectedAuthors.includes(author) ? 'active active-author' : ''}`}
-                aria-label={`Selecionar autor ${author}`}
-                onClick={() => toggleAuthor(author)}
-              >
-                {author}
-              </button>
-            ))}
-          </div>
+              <div className="category-filter-header mt-2 compact-filter-header">
+                <span className="category-filter-title">Autores</span>
+              </div>
+              <div className="category-pill-group">
+                {allAuthors.map((author) => (
+                  <button
+                    key={author}
+                    type="button"
+                    className={`category-pill category-pill--author ${selectedAuthors.includes(author) ? 'active active-author' : ''}`}
+                    aria-label={`Selecionar autor ${author}`}
+                    onClick={() => toggleAuthor(author)}
+                  >
+                    {author}
+                  </button>
+                ))}
+              </div>
 
-          <div className="category-filter-header mt-2 compact-filter-header">
-            <span className="category-filter-title">Tags</span>
-          </div>
-          <div className="category-pill-group">
-            {allTags.map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                className={`category-pill category-pill--tag ${selectedTags.includes(tag) ? 'active active-tag' : ''}`}
-                aria-label={`Selecionar tag ${tag}`}
-                onClick={() => toggleTag(tag)}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
+              <div className="category-filter-header mt-2 compact-filter-header">
+                <span className="category-filter-title">Tags</span>
+              </div>
+              <div className="category-pill-group">
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    className={`category-pill category-pill--tag ${selectedTags.includes(tag) ? 'active active-tag' : ''}`}
+                    aria-label={`Selecionar tag ${tag}`}
+                    onClick={() => toggleTag(tag)}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
 
-          <div className="category-filter-header mt-2 compact-filter-header">
-            <span className="category-filter-title">Blacklist</span>
-            <button type="button" className="category-toggle-all category-toggle-all--blocked" onClick={clearBlockedCategories}>
-              Limpar
-            </button>
-          </div>
-          <div className="category-pill-group">
-            {allCategories.map((category) => (
-              <button
-                key={`${category}-blocked`}
-                type="button"
-                className={`category-pill blocked-pill ${blockedCategories.includes(category) ? 'active blocked-active' : ''}`}
-                aria-label={`Bloquear categoria ${category}`}
-                onClick={() => toggleBlockedCategory(category)}
-              >
-                {category}
-              </button>
-            ))}
-          </div>
+              <div className="category-filter-header mt-2 compact-filter-header">
+                <span className="category-filter-title">Blacklist</span>
+                <button type="button" className="category-toggle-all category-toggle-all--blocked" onClick={clearBlockedCategories}>
+                  Limpar
+                </button>
+              </div>
+              <div className="category-pill-group">
+                {allCategories.map((category) => (
+                  <button
+                    key={`${category}-blocked`}
+                    type="button"
+                    className={`category-pill blocked-pill ${blockedCategories.includes(category) ? 'active blocked-active' : ''}`}
+                    aria-label={`Bloquear categoria ${category}`}
+                    onClick={() => toggleBlockedCategory(category)}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         <div id="video-list" className="video-list mt-5">
