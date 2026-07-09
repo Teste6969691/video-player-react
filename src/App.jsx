@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './app.css';
 
-const VIDEOS_DATA_URL = 'https://huggingface.co/datasets/Testefirst44/videos-bunker/raw/videos/data.json';
+const VIDEOS_DATA_URL = 'https://huggingface.co/datasets/Testefirst44/videos-bunker/raw/main/data.json';
 const VIDEOS_PER_PAGE = 8;
 
 function formatDuration(time) {
@@ -30,16 +30,33 @@ function createShuffledList(items) {
 function normalizeVideos(data) {
   if (!Array.isArray(data)) return [];
 
+  const toList = (value) => {
+    if (Array.isArray(value)) {
+      return value.filter(Boolean);
+    }
+
+    if (typeof value === 'string' && value.trim()) {
+      return [value.trim()];
+    }
+
+    return [];
+  };
+
   return data.map((video) => {
-    const rawCategories = Array.isArray(video?.categorias)
-      ? video.categorias
-      : video?.categoria
-        ? [video.categoria]
-        : [];
+    const rawCategories = toList(video?.categories ?? video?.categorias ?? video?.categoria);
+    const rawAuthors = toList(video?.authors ?? video?.author ?? video?.autores ?? video?.autor);
+    const rawTags = toList(video?.tags ?? video?.tag);
+
+    const normalizedCategories = rawCategories.filter(Boolean);
+    const normalizedAuthors = rawAuthors.filter(Boolean);
+    const normalizedTags = rawTags.filter(Boolean);
 
     return {
       ...video,
-      categorias: rawCategories.filter(Boolean),
+      categorias: normalizedCategories,
+      categories: normalizedCategories,
+      authors: normalizedAuthors,
+      tags: normalizedTags,
     };
   });
 }
@@ -70,10 +87,14 @@ export default function App() {
   const [videoQueue, setVideoQueue] = useState([]);
   const [randomHistory, setRandomHistory] = useState([]);
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedAuthors, setSelectedAuthors] = useState([]);
+  const [selectedTags, setSelectedTags] = useState([]);
   const [blockedCategories, setBlockedCategories] = useState([]);
   const [categoriesInitialized, setCategoriesInitialized] = useState(false);
 
   const allCategories = useMemo(() => Array.from(new Set(videos.flatMap((video) => video.categorias || []).filter(Boolean))), [videos]);
+  const allAuthors = useMemo(() => Array.from(new Set(videos.flatMap((video) => video.authors || []).filter(Boolean))), [videos]);
+  const allTags = useMemo(() => Array.from(new Set(videos.flatMap((video) => video.tags || []).filter(Boolean))), [videos]);
 
   useEffect(() => {
     currentVideoRef.current = currentVideo;
@@ -119,10 +140,12 @@ export default function App() {
 
     return videos.filter((video) => {
       const matchesSelectedCategories = !selectedCategories.length || selectedCategories.every((category) => video.categorias?.includes(category));
+      const matchesSelectedAuthors = !selectedAuthors.length || selectedAuthors.every((author) => video.authors?.includes(author));
+      const matchesSelectedTags = !selectedTags.length || selectedTags.every((tag) => video.tags?.includes(tag));
       const isBlocked = blockedCategories.some((category) => video.categorias?.includes(category));
-      return matchesSelectedCategories && !isBlocked;
+      return matchesSelectedCategories && matchesSelectedAuthors && matchesSelectedTags && !isBlocked;
     });
-  }, [videos, selectedCategories, blockedCategories]);
+  }, [videos, selectedCategories, selectedAuthors, selectedTags, blockedCategories]);
 
   const galleryItems = useMemo(() => filteredVideos, [filteredVideos]);
   const totalPages = Math.max(1, Math.ceil(galleryItems.length / VIDEOS_PER_PAGE));
@@ -134,7 +157,7 @@ export default function App() {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategories.join('|'), blockedCategories.join('|')]);
+  }, [selectedCategories.join('|'), selectedAuthors.join('|'), selectedTags.join('|'), blockedCategories.join('|')]);
 
   useEffect(() => {
     if (!videos.length) return;
@@ -546,6 +569,24 @@ export default function App() {
     });
   };
 
+  const toggleAuthor = (author) => {
+    setSelectedAuthors((prevAuthors) => {
+      if (prevAuthors.includes(author)) {
+        return prevAuthors.filter((item) => item !== author);
+      }
+      return [...prevAuthors, author];
+    });
+  };
+
+  const toggleTag = (tag) => {
+    setSelectedTags((prevTags) => {
+      if (prevTags.includes(tag)) {
+        return prevTags.filter((item) => item !== tag);
+      }
+      return [...prevTags, tag];
+    });
+  };
+
   const toggleBlockedCategory = (category) => {
     setBlockedCategories((prevCategories) => {
       if (prevCategories.includes(category)) {
@@ -558,6 +599,14 @@ export default function App() {
 
   const selectAllCategories = () => {
     setSelectedCategories([]);
+  };
+
+  const selectAllAuthors = () => {
+    setSelectedAuthors([]);
+  };
+
+  const selectAllTags = () => {
+    setSelectedTags([]);
   };
 
   const clearBlockedCategories = () => {
@@ -675,11 +724,51 @@ export default function App() {
               <button
                 key={category}
                 type="button"
-                className={`category-pill ${selectedCategories.includes(category) ? 'active' : ''}`}
+                className={`category-pill category-pill--category ${selectedCategories.includes(category) ? 'active' : ''}`}
                 aria-label={`Selecionar categoria ${category}`}
                 onClick={() => toggleCategory(category)}
               >
                 {category}
+              </button>
+            ))}
+          </div>
+
+          <div className="category-filter-header mt-3">
+            <span className="category-filter-title">Autores</span>
+            <button type="button" className="category-toggle-all category-toggle-all--author" onClick={selectAllAuthors}>
+              Todos
+            </button>
+          </div>
+          <div className="category-pill-group">
+            {allAuthors.map((author) => (
+              <button
+                key={author}
+                type="button"
+                className={`category-pill category-pill--author ${selectedAuthors.includes(author) ? 'active active-author' : ''}`}
+                aria-label={`Selecionar autor ${author}`}
+                onClick={() => toggleAuthor(author)}
+              >
+                {author}
+              </button>
+            ))}
+          </div>
+
+          <div className="category-filter-header mt-3">
+            <span className="category-filter-title">Tags</span>
+            <button type="button" className="category-toggle-all category-toggle-all--tag" onClick={selectAllTags}>
+              Todas
+            </button>
+          </div>
+          <div className="category-pill-group">
+            {allTags.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className={`category-pill category-pill--tag ${selectedTags.includes(tag) ? 'active active-tag' : ''}`}
+                aria-label={`Selecionar tag ${tag}`}
+                onClick={() => toggleTag(tag)}
+              >
+                {tag}
               </button>
             ))}
           </div>
@@ -710,6 +799,23 @@ export default function App() {
             <div key={video.nome} className="video-card" onClick={() => handleVideoSelect(video)} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter') handleVideoSelect(video); }}>
               <div className="video-title">{video.nome}</div>
               <img className="video-frame" src={video.url_thumbnail} alt={video.nome} />
+              <div className="metadata-pill-group">
+                {(video.categorias || []).map((category) => (
+                  <span key={`${video.nome}-category-${category}`} className="metadata-pill metadata-pill--category">
+                    {category}
+                  </span>
+                ))}
+                {(video.authors || []).map((author) => (
+                  <span key={`${video.nome}-author-${author}`} className="metadata-pill metadata-pill--author">
+                    {author}
+                  </span>
+                ))}
+                {(video.tags || []).map((tag) => (
+                  <span key={`${video.nome}-tag-${tag}`} className="metadata-pill metadata-pill--tag">
+                    {tag}
+                  </span>
+                ))}
+              </div>
             </div>
           ))}
         </div>

@@ -515,8 +515,38 @@ video {
   word-break: break-word;
 }
 
+.metadata-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 6px;
+}
 
+.metadata-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: white;
+  white-space: nowrap;
+}
 
+.metadata-pill--category {
+  background: linear-gradient(135deg, #ff8533, #ff6b1a);
+}
+
+.metadata-pill--author {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+}
+
+.metadata-pill--tag {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
 
 /* ============================================
    PAGINATION
@@ -615,6 +645,16 @@ c
   color: white;
   border-color: transparent;
   box-shadow: 0 8px 20px rgba(255, 107, 26, 0.25);
+}
+
+.category-pill.active-author {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+}
+
+.category-pill.active-tag {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  box-shadow: 0 8px 20px rgba(124, 58, 237, 0.25);
 }
 
 .category-pill.blocked-pill {

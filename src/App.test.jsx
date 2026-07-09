@@ -50,6 +50,51 @@ describe('App', () => {
     });
   });
 
+  it('filters videos using the new categories field from data.json', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { nome: 'video-new-1', categories: ['2d'], url_video: 'https://example.com/new-1.mp4', url_thumbnail: 'https://example.com/new-1.webp' },
+        { nome: 'video-new-2', categories: ['3d'], url_video: 'https://example.com/new-2.mp4', url_thumbnail: 'https://example.com/new-2.webp' },
+      ],
+    }));
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: /video-new-1/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /selecionar categoria 2d/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /video-new-1/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /video-new-2/i })).not.toBeInTheDocument();
+    });
+  });
+
+  it('filters videos by authors and tags in separate metadata sections', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { nome: 'video-meta-1', categories: ['2d'], authors: ['Ana'], tags: ['anime'], url_video: 'https://example.com/meta-1.mp4', url_thumbnail: 'https://example.com/meta-1.webp' },
+        { nome: 'video-meta-2', categories: ['3d'], authors: ['Bruno'], tags: ['loop'], url_video: 'https://example.com/meta-2.mp4', url_thumbnail: 'https://example.com/meta-2.webp' },
+        { nome: 'video-meta-3', categories: ['2d'], authors: ['Ana'], tags: ['loop'], url_video: 'https://example.com/meta-3.mp4', url_thumbnail: 'https://example.com/meta-3.webp' },
+      ],
+    }));
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: /video-meta-1/i })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /selecionar autor ana/i }));
+    fireEvent.click(screen.getByRole('button', { name: /selecionar tag loop/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /video-meta-3/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /video-meta-1/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /video-meta-2/i })).not.toBeInTheDocument();
+    });
+  });
+
   it('paginates the gallery with up to 8 items per page', async () => {
     render(<App />);
 
