@@ -612,19 +612,32 @@ video {
 }
 
 .category-toggle-all {
-  border: none;
-  background: rgba(255, 133, 51, 0.15);
+  border: 1px solid rgba(255, 133, 51, 0.25);
+  background: rgba(255, 133, 51, 0.12);
   color: #ffb07a;
   padding: 6px 12px;
   border-radius: 999px;
   font-size: 0.9rem;
 }
 
+.category-toggle-all--author {
+  border-color: rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.12);
+  color: #8dc1ff;
+}
+
+.category-toggle-all--tag {
+  border-color: rgba(139, 92, 246, 0.25);
+  background: rgba(139, 92, 246, 0.12);
+  color: #cbb7ff;
+}
+
 .category-toggle-all--blocked {
+  border-color: rgba(220, 53, 69, 0.25);
   background: rgba(220, 53, 69, 0.15);
   color: #ff7b7b;
 }
-c
+
 .category-pill-group {
   display: flex;
   flex-wrap: wrap;
@@ -638,6 +651,24 @@ c
   padding: 8px 14px;
   border-radius: 999px;
   transition: all 150ms ease-in-out;
+}
+
+.category-pill--category {
+  border-color: rgba(255, 133, 51, 0.25);
+  background: rgba(255, 133, 51, 0.1);
+  color: #ffb07a;
+}
+
+.category-pill--author {
+  border-color: rgba(59, 130, 246, 0.25);
+  background: rgba(59, 130, 246, 0.1);
+  color: #8dc1ff;
+}
+
+.category-pill--tag {
+  border-color: rgba(139, 92, 246, 0.25);
+  background: rgba(139, 92, 246, 0.1);
+  color: #cbb7ff;
 }
 
 .category-pill.active {
