@@ -107,6 +107,7 @@ describe('App', () => {
     render(<App />);
 
     expect(await screen.findByRole('button', { name: /video-union-1/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /expandir/i }));
 
     fireEvent.click(screen.getByRole('button', { name: /selecionar autor ana/i }));
     fireEvent.click(screen.getByRole('button', { name: /selecionar tag loop/i }));
@@ -115,6 +116,29 @@ describe('App', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /video-union-1/i })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: /video-union-2/i })).toBeInTheDocument();
+    });
+  });
+
+  it('supports union mode only for selected metadata groups', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [
+        { nome: 'video-author-ana', categories: ['2d'], authors: ['Ana'], tags: ['anime'], url_video: 'https://example.com/author-ana.mp4', url_thumbnail: 'https://example.com/author-ana.webp' },
+        { nome: 'video-author-bruno', categories: ['3d'], authors: ['Bruno'], tags: ['loop'], url_video: 'https://example.com/author-bruno.mp4', url_thumbnail: 'https://example.com/author-bruno.webp' },
+      ],
+    }));
+
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: /video-author-ana/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /expandir/i }));
+
+    fireEvent.click(screen.getByRole('button', { name: /selecionar autor ana/i }));
+    fireEvent.click(screen.getByRole('button', { name: /união/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /video-author-ana/i })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /video-author-bruno/i })).not.toBeInTheDocument();
     });
   });
 
